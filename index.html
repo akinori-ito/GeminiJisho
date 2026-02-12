@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+      #result { background: #f4f4f4; padding: 15px; border-radius: 5px; margin-top: 20px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h2>英日・日英翻訳</h2>
+    <input type="radio" id="transtype1" name="transtype" value="日本語を英語に">日本語を英語に
+    <input type="radio" id="transtype2" name="transtype" value="英語を日本語に" checked>英語を日本語に<br>
+    <input type="text" id="searchTerm"><br><br>
+    
+    <button onclick="lookup()">翻訳</button>
+
+    <div id="result">結果がここに表示されます...</div>
+
+    <script>
+      function lookup() {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerText = "GeminiがPDFを解析中...";
+
+        // GASの関数を呼び出し
+        const trans_direction = document.querySelector('input[name="transtype"]:checked');
+        var prompt = "次の"+trans_direction.value+
+          "翻訳してください。単語としての意味が複数ある場合は、それらを箇条書きにして、同時にその意味の用例も示してください。\n"+
+          "翻訳する単語："+document.getElementById("searchTerm").value;
+        resultDiv.innerText = prompt;
+        google.script.run
+          .withSuccessHandler(res => { resultDiv.innerText = res; })
+          .withFailureHandler(err => { resultDiv.innerText = "エラー: " + err; })
+          .submitQuery(prompt);
+
+      }
+    </script>
+  </body>
+</html>
