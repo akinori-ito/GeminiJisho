@@ -19,28 +19,49 @@
     <input type="text" id="searchTerm" style="width: 300px; padding: 5px;"><br><br>
     
     <button onclick="lookup()" style="padding: 5px 15px; cursor: pointer;">翻訳</button>
-
     <div id="result">結果がここに表示されます...</div>
+    <div id="actionButtons" style="display:none; margin-top:10px;">
+      <button onclick="copyAndGo()" style="background: #4285f4; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+        この結果をコピーしてGeminiで続きを聞く
+      </button>
+    </div>
 
     <script>
+      let lastResponse = ""; // 最新の回答を保持する変数
+      let prompt = ""; // Geminiに与えるプロンプト
+      document.getElementById("searchTerm").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") lookup();
+      });
       function lookup() {
         const resultDiv = document.getElementById('result');
+        const actionButtons = document.getElementById('actionButtons');
         resultDiv.innerText = "Geminiが考え中...";
+        actionButtons.style.display = "none"; // ボタンを隠す
 
         const trans_direction = document.querySelector('input[name="transtype"]:checked');
-        var prompt = "次の" + trans_direction.value + 
-          "翻訳してください。単語としての意味が複数ある場合は、それらを箇条書きにして、同時にその意味の用例も示してください。\n" +
+        prompt = "次の" + trans_direction.value + "翻訳してください。単語としての意味が複数ある場合は、それらを箇条書きにして、同時にその意味の用例も示してください。\n" +
           "翻訳する単語：" + document.getElementById("searchTerm").value;
 
         google.script.run
           .withSuccessHandler(res => { 
-            // MarkdownをHTMLに変換して表示
+            lastResponse = res; // 回答を保存
             resultDiv.innerHTML = marked.parse(res); 
+            actionButtons.style.display = "block"; // 完了したらボタンを表示
           })
-          .withFailureHandler(err => { 
-            resultDiv.innerText = "エラー: " + err; 
-          })
+          .withFailureHandler(err => { resultDiv.innerText = "エラー: " + err; })
           .submitQuery(prompt);
+      }
+
+      function copyAndGo() {
+        // クリップボードにコピー
+        var textToCopy = "Geminiに次のプロンプトを与えました。\n<PROMPT>\n"+prompt+
+          "\n</prompt>\n+それに対する回答は次のとおりでした。\n+<response>\n"+lastResponse+
+          "\n</response>\n"+"これについて、更に次の質問に答えてください。\n";
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          alert("回答をコピーしました。Geminiのページが開くので、貼り付けて続きを質問してください。");
+          // Gemini公式サイトを別タブで開く
+          window.open("https://gemini.google.com/app", "_blank");
+        });
       }
     </script>
   </body>
